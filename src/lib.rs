@@ -49,30 +49,51 @@ where
             devices: heapless::Vec::new(),
         };
 
-        for addr in 1..128u8 {
-            match self.i2c.write(addr, &[]) {
-                Ok(_) => {
-                    result
-                        .devices
-                        .push(I2CDevice { address: addr })
-                        .unwrap_or(());
-                }
-                Err(_) => {}
+        for address in 1..128u8 {
+            if self.check_address_internal(address)? {
+                result.devices.push(I2CDevice { address }).unwrap_or(());
             }
         }
 
         Ok(result)
     }
 
+    pub fn scan_range(&mut self, start: u8, end: u8) -> Result<ScanResult, I2C::Error> {
+        let start = start.clamp(1, 127);
+        let end = end.clamp(1, 127);
+
+        let mut result = ScanResult {
+            devices: heapless::Vec::new(),
+        };
+
+        for address in start..=end {
+            if self.check_address_internal(address)? {
+                result.devices.push(I2CDevice { address }).unwrap_or(());
+            }
+        }
+
+        Ok(result)
+    }
+
+    fn check_address_internal(&mut self, address: u8) -> Result<bool, I2C::Error> {
+        match self.i2c.write(address, &[]) {
+            Ok(_) => Ok(true),
+            Err(_) => {
+                // This is a bit of a hack, but most I2C implementations will return
+                // a specific error for "no ACK received" or "NACK" which means no device at this address.
+                // We want to treat this as "no device" rather than a real error.
+                Ok(false)
+            }
+        }
+    }
+
     pub fn check_address(&mut self, address: u8) -> Result<bool, I2C::Error> {
         if address > 127 {
+            // Invalid 7-bit address
             return Ok(false);
         }
 
-        match self.i2c.write(address, &[]) {
-            Ok(_) => Ok(true),
-            Err(_) => Ok(false),
-        }
+        self.check_address_internal(address)
     }
 
     pub fn release(self) -> I2C {
