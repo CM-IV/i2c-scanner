@@ -16,8 +16,19 @@ impl ScanResult {
     pub fn device_count(&self) -> usize {
         self.devices.len()
     }
-    pub fn has_device_at(&self, address: u8) -> bool {
-        self.devices.iter().any(|dev| dev.address == address)
+
+    pub fn is_empty(&self) -> bool {
+        self.devices.is_empty()
+    }
+
+    pub fn contains_address(&self, address: u8) -> bool {
+        self.devices.iter().any(|device| device.address == address)
+    }
+
+    pub fn find_in_range(&self, start: u8, end: u8) -> impl Iterator<Item = &I2CDevice> {
+        self.devices
+            .iter()
+            .filter(move |device| device.address >= start && device.address <= end)
     }
 }
 
