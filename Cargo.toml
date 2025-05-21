@@ -1,0 +1,16 @@
+[package]
+name = "i2c_scanner"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+embedded-hal = "1.0.0"
+heapless = "0.8.0"
+
+[lib]
+name = "i2c_scanner"
+path = "src/lib.rs"
+crate-type = ["lib"]
+
+[dev-dependencies]
+embedded-hal-mock = "0.11"
